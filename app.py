@@ -54,10 +54,20 @@ with st.form("expense_form"):
         st.success("✅ Expense Added!")
 
 # -----------------------------
-# Step 3 — Display All Expenses
+# Step 3 — Display All Expenses safely
 # -----------------------------
 st.subheader("All Expenses")
-st.dataframe(df[["Date","Category","Amount","Payment Method","Description","Notes"]])
+expected_cols = ["Date","Category","Amount","Payment Method","Description","Notes"]
+
+# Add missing columns if any
+for col in expected_cols:
+    if col not in df.columns:
+        df[col] = ""
+
+# Reorder columns
+df = df[expected_cols]
+
+st.dataframe(df)
 
 # -----------------------------
 # Step 4 — Charts
