@@ -9,11 +9,12 @@ st.title("💰 Personal Finance Tracker")
 # CSV path
 file_path = "transactions.csv"
 
+# Expected columns
+expected_cols = ["Date","Category","Amount","Payment Method","Description"]
+
 # -----------------------------
 # Step 1 — CSV auto-create if missing
 # -----------------------------
-expected_cols = ["Date","Category","Amount","Payment Method","Description"]
-
 if not os.path.exists(file_path):
     df = pd.DataFrame([
         {"Date":"2025-12-01","Category":"Food","Amount":500,"Payment Method":"UPI","Description":"Lunch"},
@@ -66,10 +67,13 @@ with st.form("expense_form"):
         st.success("✅ Expense Added!")
 
 # -----------------------------
-# Step 3 — Display All Expenses
+# Step 3 — Display All Expenses with S.No
 # -----------------------------
 st.subheader("All Expenses")
-st.dataframe(df)
+df_display = df.copy()
+df_display["S.No"] = range(1, len(df_display)+1)
+df_display = df_display[["S.No"] + expected_cols]
+st.dataframe(df_display)
 
 # -----------------------------
 # Step 4 — Charts (Safe)
