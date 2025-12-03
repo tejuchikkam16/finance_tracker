@@ -12,6 +12,8 @@ file_path = "transactions.csv"
 # -----------------------------
 # Step 1 — CSV auto-create if missing
 # -----------------------------
+expected_cols = ["Date","Category","Amount","Payment Method","Description"]
+
 if not os.path.exists(file_path):
     df = pd.DataFrame([
         {"Date":"2025-12-01","Category":"Food","Amount":500,"Payment Method":"UPI","Description":"Lunch"},
@@ -20,6 +22,12 @@ if not os.path.exists(file_path):
     df.to_csv(file_path, index=False)
 else:
     df = pd.read_csv(file_path)
+
+# Ensure all expected columns exist & correct order
+for col in expected_cols:
+    if col not in df.columns:
+        df[col] = ""
+df = df[expected_cols]
 
 # -----------------------------
 # Step 2 — Add New Expense Form
@@ -32,7 +40,6 @@ with st.form("expense_form"):
     payment_method = st.selectbox("Payment Method", ["UPI","Cash","Card","Netbanking"])
     description = st.text_input("Description")
 
-    # Optional description handle
     description = description if description else ""
 
     submitted = st.form_submit_button("Add Expense")
@@ -44,8 +51,7 @@ with st.form("expense_form"):
             "Payment Method": payment_method,
             "Description": description
         }
-        # Append safely to CSV
-        expected_cols = ["Date","Category","Amount","Payment Method","Description"]
+        # Append safely
         if not os.path.exists(file_path):
             pd.DataFrame([new_row])[expected_cols].to_csv(file_path, index=False)
         else:
@@ -53,40 +59,41 @@ with st.form("expense_form"):
 
         # Reload CSV
         df = pd.read_csv(file_path)
-        # Ensure correct columns order
         for col in expected_cols:
             if col not in df.columns:
                 df[col] = ""
         df = df[expected_cols]
-
         st.success("✅ Expense Added!")
 
 # -----------------------------
-# Step 3 — Display All Expenses safely
+# Step 3 — Display All Expenses
 # -----------------------------
 st.subheader("All Expenses")
-expected_cols = ["Date","Category","Amount","Payment Method","Description"]
-for col in expected_cols:
-    if col not in df.columns:
-        df[col] = ""
-df = df[expected_cols]
 st.dataframe(df)
 
 # -----------------------------
-# Step 4 — Charts
+# Step 4 — Charts (Safe)
 # -----------------------------
 if not df.empty:
+    df["Amount"] = pd.to_numeric(df["Amount"], errors="coerce").fillna(0)
+
     pie_data = df.groupby("Category")["Amount"].sum()
-    fig1, ax1 = plt.subplots()
-    ax1.pie(pie_data, labels=pie_data.index, autopct='%1.1f%%')
-    st.subheader("Expenses by Category (Pie Chart)")
-    st.pyplot(fig1)
+    if pie_data.sum() > 0:
+        fig1, ax1 = plt.subplots()
+        ax1.pie(pie_data, labels=pie_data.index, autopct='%1.1f%%')
+        st.subheader("Expenses by Category (Pie Chart)")
+        st.pyplot(fig1)
+    else:
+        st.info("No expense amounts to display Pie Chart.")
 
     bar_data = df.groupby("Category")["Amount"].sum()
-    fig2, ax2 = plt.subplots()
-    ax2.bar(bar_data.index, bar_data.values)
-    st.subheader("Expenses by Category (Bar Chart)")
-    st.pyplot(fig2)
+    if bar_data.sum() > 0:
+        fig2, ax2 = plt.subplots()
+        ax2.bar(bar_data.index, bar_data.values)
+        st.subheader("Expenses by Category (Bar Chart)")
+        st.pyplot(fig2)
+    else:
+        st.info("No expense amounts to display Bar Chart.")
 else:
     st.info("No expense data available to display charts.")
 
