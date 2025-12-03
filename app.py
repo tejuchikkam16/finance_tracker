@@ -26,9 +26,16 @@ with st.form("expense_form"):
     date = st.date_input("Date")
     category = st.selectbox("Category", ["Food","Transport","Shopping","Health","Bills","Entertainment","Others"])
     amount = st.number_input("Amount", min_value=0.0, format="%.2f")
-    description = st.text_input("Description")
     payment_method = st.selectbox("Payment Method", ["UPI","Cash","Card","Netbanking"])
+    description = st.text_input("Description")
     notes = st.text_input("Notes")
+
+    # Handle empty optional fields
+    if not description:
+        description = ""
+    if not notes:
+        notes = ""
+
     submitted = st.form_submit_button("Add Expense")
     
     if submitted:
@@ -36,19 +43,19 @@ with st.form("expense_form"):
             "Date": date.strftime("%Y-%m-%d"),
             "Category": category,
             "Amount": amount,
-            "Description": description,
             "Payment Method": payment_method,
+            "Description": description,
             "Notes": notes
         }
-        # Append to CSV directly
+        # Append new row to CSV with correct header
         pd.DataFrame([new_row]).to_csv(file_path, mode='a', header=not os.path.exists(file_path), index=False)
-        # Reload updated CSV to reflect new row
+        # Reload updated CSV
         df = pd.read_csv(file_path)
         st.success("Expense Added!")
 
-# Step 3 — Display All Expenses
+# Step 3 — Display All Expenses with correct column order
 st.subheader("All Expenses")
-st.dataframe(df)
+st.dataframe(df[["Date","Category","Amount","Payment Method","Description","Notes"]])
 
 # Step 4 — Charts
 if not df.empty:
