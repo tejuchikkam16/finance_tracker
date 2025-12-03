@@ -14,8 +14,8 @@ file_path = "transactions.csv"
 # -----------------------------
 if not os.path.exists(file_path):
     df = pd.DataFrame([
-        {"Date":"2025-12-01","Category":"Food","Amount":500,"Payment Method":"UPI","Description":"Lunch","Notes":""},
-        {"Date":"2025-12-02","Category":"Transport","Amount":300,"Payment Method":"Cash","Description":"Cab","Notes":""}
+        {"Date":"2025-12-01","Category":"Food","Amount":500,"Payment Method":"UPI","Description":"Lunch"},
+        {"Date":"2025-12-02","Category":"Transport","Amount":300,"Payment Method":"Cash","Description":"Cab"}
     ])
     df.to_csv(file_path, index=False)
 else:
@@ -31,11 +31,9 @@ with st.form("expense_form"):
     amount = st.number_input("Amount", min_value=0.0, format="%.2f")
     payment_method = st.selectbox("Payment Method", ["UPI","Cash","Card","Netbanking"])
     description = st.text_input("Description")
-    notes = st.text_input("Notes")
 
-    # Optional fields handle
+    # Optional description handle
     description = description if description else ""
-    notes = notes if notes else ""
 
     submitted = st.form_submit_button("Add Expense")
     if submitted:
@@ -44,29 +42,34 @@ with st.form("expense_form"):
             "Category": category,
             "Amount": amount,
             "Payment Method": payment_method,
-            "Description": description,
-            "Notes": notes
+            "Description": description
         }
-        # Append new row safely
-        pd.DataFrame([new_row]).to_csv(file_path, mode='a', header=False, index=False)
-        # Reload CSV to reflect new row
+        # Append safely to CSV
+        expected_cols = ["Date","Category","Amount","Payment Method","Description"]
+        if not os.path.exists(file_path):
+            pd.DataFrame([new_row])[expected_cols].to_csv(file_path, index=False)
+        else:
+            pd.DataFrame([new_row])[expected_cols].to_csv(file_path, mode='a', header=False, index=False)
+
+        # Reload CSV
         df = pd.read_csv(file_path)
+        # Ensure correct columns order
+        for col in expected_cols:
+            if col not in df.columns:
+                df[col] = ""
+        df = df[expected_cols]
+
         st.success("✅ Expense Added!")
 
 # -----------------------------
 # Step 3 — Display All Expenses safely
 # -----------------------------
 st.subheader("All Expenses")
-expected_cols = ["Date","Category","Amount","Payment Method","Description","Notes"]
-
-# Add missing columns if any
+expected_cols = ["Date","Category","Amount","Payment Method","Description"]
 for col in expected_cols:
     if col not in df.columns:
         df[col] = ""
-
-# Reorder columns
 df = df[expected_cols]
-
 st.dataframe(df)
 
 # -----------------------------
